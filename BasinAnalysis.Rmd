@@ -1,0 +1,81 @@
+---
+title: "Cuyama Analysis"
+author: "Madeline Gorchels"
+date: "3/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Part 1: Ground Water Levels in the Cuyama Basin
+
+```{r, include = FALSE}
+library(tidyverse)
+library(knitr)
+library(forecast)
+library(sf)
+library(tmap)
+library(leaflet)
+library(ggrepel)
+library(ggspatial)
+library(RColorBrewer)
+library(raster)
+library(maptools)
+library(sp)
+library(raster)
+```
+
+
+```{r, include=FALSE}
+#Santa Barbara County, California
+#Hydrologic Unit Code 18060007
+#Latitude  34°56'03.7", Longitude 119°41'23.4" NAD83
+#Land-surface elevation 2,155 feet above NGVD29
+#The depth of the well is 790 feet below land surface.
+#The depth of the hole is 820 feet below land surface.
+#This well is completed in the California Coastal Basin aquifers (N100CACSTL) national aquifer.
+
+well1_wl = read_csv("well1_wl.csv") %>% 
+  mutate(neg_dep = water_level*-1) %>% 
+  dplyr::select(date, water_level, neg_dep) %>% 
+  filter(date != "NA")
+```
+
+Water levels in one well from 1981 to present 
+```{r}
+ggplot(well1_wl)+
+  geom_point(aes(x = date, y = neg_dep))+
+  theme_classic()+
+  labs(y = "Depth to water level, feet below land surface", x = "Year")
+```
+
+###Part 2: Subsidence 
+```{r, echo = FALSE}
+#OPTI Well #895 Latitude: 34.68337136 Longitude: -119.3534074
+#OPTI Well #896 Latitude: 34.88856804 Longitude: -119.8153558
+#OPTI Well #897 Latitude: 34.9426 Longitude: -119.6739
+#OPTI Well #898 Latitude: 34.8515 Longitude: -119.4839
+#OPTI Well #899 Latitude: 34.9205 Longitude: -119.4058
+```
+
+
+
+###Part 3: Water Quality Concerns
+
+```{r, echo=FALSE, message=FALSE, output=FALSE}
+#spatial information for well1 same as the ground water levels
+well1_wq = read_csv("well1_wq.csv") %>% 
+  mutate(TDS = Calcium + Na + Mg + K + Cl + Fl + SO4)
+```
+
+```{r}
+ggplot(data = well1_wq)+ 
+  geom_point(aes(x = date, y = solids))+
+  theme_classic()+
+  geom_point(aes(x = date, y = NO4), color = "blue")+
+  scale_y_continuous(sec.axis = sec_axis(~./1000, name = "Nitrate (mg/L)"))
+```
+
+
