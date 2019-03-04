@@ -1,0 +1,4 @@
+Warning 6: Normalized/laundered field name: 'description' to 'descriptio'
+Warning 6: Normalized/laundered field name: 'description' to 'descriptio'
+Warning 1: Value 'Cuyama Valley <br> <br> FID 0 <br> Basin_ID 3-013 <br> Basin_Subb 3-013 <br> Basin_Su_1 3-13 <br> Basin_Name Cuyama Valley <br> Subbasin_N <br> Region_Off SRO <br> Date_Recor <Null> <br> Record_Edi <br> Report <br> Date_Data_ <br> SHAPE_Leng 579134.405526 <br> Acres 241694.871812 <br> Shape_Le_1 1900121.74071 <br> RAW_GSA_ID <br> GSA_ID 327' of field descriptio has been truncated to 254 characters.  This warning will not be emitted any more for that layer.
+Warning 6: Normalized/laundered field name: 'description' to 'descriptio'

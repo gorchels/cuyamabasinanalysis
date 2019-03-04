@@ -77,5 +77,13 @@ ggplot(data = well1_wq)+
   geom_point(aes(x = date, y = NO4), color = "blue")+
   scale_y_continuous(sec.axis = sec_axis(~./1000, name = "Nitrate (mg/L)"))
 ```
+Loading of the Cuyama Polygon
+```{r}
+cuyama = read_sf(".", layer = "Cuyama_Groundwater_Basin-polygon")
+```
 
+Time to mess with it 
+```{r}
+plot(cuyama)
+```
 
