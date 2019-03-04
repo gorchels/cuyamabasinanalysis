@@ -93,10 +93,19 @@ plot(cuyama)
 nitrate = read_csv("tds_initial.csv") %>% 
   dplyr::select(-X6, -X7, -X8)
 
+cuyama_sp = as(cuyama, "Spatial") 
+cuyama_win = as(cuyama_sp, "owin")
 
 nitrate_sf = st_as_sf(nitrate, coords = c("Longitude", "Latitude"), crs = 4326)
 nitrate_sp = as(nitrate_sf, 'Spatial')
 nitrate_ppp = as(nitrate_sp, "ppp")
-nitrate_pb = ppp(nitrate_ppp$x, nitrate_ppp$y, window = cuyama)
+nitrate_pb = spatstat::ppp(nitrate_ppp$x, nitrate_ppp$y, window = cuyama_win)
+plot(nitrate_pb)
+```
+```{r}
+tm_shape(cuyama)+
+  tm_fill()+
+  tm_shape(nitrate)+
+  tm_dots("AMT", size = 0.5) 
 ```
 
