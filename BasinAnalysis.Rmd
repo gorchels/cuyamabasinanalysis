@@ -25,6 +25,7 @@ library(raster)
 library(maptools)
 library(sp)
 library(raster)
+library(gstat)
 ```
 
 
@@ -80,10 +81,22 @@ ggplot(data = well1_wq)+
 Loading of the Cuyama Polygon
 ```{r}
 cuyama = read_sf(".", layer = "Cuyama_Groundwater_Basin-polygon")
+st_crs(cuyama) = 4326
 ```
 
 Time to mess with it 
 ```{r}
 plot(cuyama)
+```
+
+```{r}
+nitrate = read_csv("tds_initial.csv") %>% 
+  dplyr::select(-X6, -X7, -X8)
+
+
+nitrate_sf = st_as_sf(nitrate, coords = c("Longitude", "Latitude"), crs = 4326)
+nitrate_sp = as(nitrate_sf, 'Spatial')
+nitrate_ppp = as(nitrate_sp, "ppp")
+nitrate_pb = ppp(nitrate_ppp$x, nitrate_ppp$y, window = cuyama)
 ```
 
