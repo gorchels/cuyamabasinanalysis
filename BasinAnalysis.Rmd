@@ -16,16 +16,14 @@ library(tidyverse)
 library(knitr)
 library(forecast)
 library(sf)
-library(tmap)
 library(leaflet)
 library(ggrepel)
 library(ggspatial)
 library(RColorBrewer)
-library(raster)
 library(maptools)
 library(sp)
-library(raster)
 library(gstat)
+library(raster)
 ```
 
 
@@ -87,25 +85,123 @@ st_crs(cuyama) = 4326
 Time to mess with it 
 ```{r}
 plot(cuyama)
+ggplot(cuyama)+
+  geom_sf()
+
+
+leaflet(cuyama) %>% 
+  addTiles() %>% 
+  addPolygons()
 ```
 
 ```{r}
 nitrate = read_csv("tds_initial.csv") %>% 
-  dplyr::select(-X6, -X7, -X8)
+  #dplyr::select(-X6, -X7, -X8) %>% 
+  group_by(Site_Name) %>% 
+  mutate(Date = as.Date(Date, "%m/%d/%Y")) %>% 
+  mutate(year = as.numeric(format(Date,'%Y')))
+  
+
+nitrate_sf = st_as_sf(nitrate, coords = c("Longitude", "Latitude"), crs = 4326)
 
 cuyama_sp = as(cuyama, "Spatial") 
 cuyama_win = as(cuyama_sp, "owin")
 
-nitrate_sf = st_as_sf(nitrate, coords = c("Longitude", "Latitude"), crs = 4326)
-nitrate_sp = as(nitrate_sf, 'Spatial')
-nitrate_ppp = as(nitrate_sp, "ppp")
-nitrate_pb = spatstat::ppp(nitrate_ppp$x, nitrate_ppp$y, window = cuyama_win)
-plot(nitrate_pb)
 ```
+
+
 ```{r}
 tm_shape(cuyama)+
   tm_fill()+
-  tm_shape(nitrate)+
-  tm_dots("AMT", size = 0.5) 
+  tm_shape(nitrate_sf)+
+  tm_dots("NO3", size = 0.5) 
+```
+```{r}
+nitrate_sp = as_Spatial(nitrate_sf)
+
+lat <- seq(35.24, 35.26, length.out = 200)
+long <- seq(-120.15,-120.21, length.out = 200)
+
+grid = expand.grid(lon = long, lat = lat)
+grid_sf = st_as_sf(grid, coords = c("lon", "lat"), crs = 4326) #converts to simple feature object
+grid_sp = as_Spatial(grid_sf)
+```
+
+Variogram creation 
+```{r}
+nitrate_vg = gstat::variogram(NO3~1, data = nitrate_sp)
+plot(nitrate_vg)
+nitrate_vgm_fit <- fit.variogram(nitrate_vg, model = vgm(nugget = 0, psill = 5, model = "Sph", range = 10))
+
+```
+Kriging
+
+```{r}
+nitrate_krige <- krige(NO3 ~ 1, nitrate_sp, grid_sp, model=nitrate_vgm_fit)
+```
+Kriging visualization 
+```{r}
+nitrate_krige_df = as.data.frame(nitrate_krige)
+nitrate_krige_2 = nitrate_krige_df %>% 
+  rename(lon = coords.x1, lat = coords.x2, predicted = var1.pred, err = var1.var)
+nitrate_predicted = st_as_sf(nitrate_krige_2, coords = c("lon", "lat"), crs = 4326)
+
+plot(nitrate_predicted)
+
+nitrate_cropped = st_intersection(rain_predicted, nitrate)
+plot(nitrate_cropped)
+```
+
+
+Nitrate concentration in 1990
+```{r}
+nitrate_1966_sf = nitrate_sf %>% 
+  filter(year == 1966)
+ 
+```
+
+
+```{r}
+nitrate_1966_sp = as_Spatial(nitrate_1966_sf)
+
+```
+
+Variogram creation 
+```{r}
+nitrate_1966_vg = gstat::variogram(NO3~1, data = nitrate_1966_sp)
+#plot(nitrate_1991_vg)
+nitrate_vgm_1966_fit <- fit.variogram(nitrate_1966_vg, model = vgm(nugget = 0, psill = 5, model = "Sph", range = 1))
+
+```
+Kriging
+
+```{r}
+nitrate_1966_krige <- krige(NO3 ~ 1, nitrate__sp, grid_sp, model=nitrate_vgm_1966_fit)
+
+
+nitrate_krige_df_1966 = as.data.frame(nitrate_1966_krige)
+nitrate_krige_2_1966 = nitrate_krige_df_1966 %>% 
+  rename(lon = coords.x1, lat = coords.x2, predicted = var1.pred, err = var1.var)
+nitrate_predicted = st_as_sf(nitrate_krige_2, coords = c("lon", "lat"), crs = 4326)
+
+plot(nitrate_predicted)
+
+nitrate_cropped = st_intersection(nitrate_predicted, nitrate)
+plot(nitrate_cropped)
+```
+
+Trying to find where the most nitrate data is found
+```{r}
+nitrate_count = nitrate_sf %>% 
+  group_by(year) %>% 
+  tally() %>% 
+  arrange(-n) %>% 
+  head(25)
+
+ggplot(nitrate_count)+
+  geom_sf(data = cuyama)+
+  geom_sf(data = nitrate_count)+
+  theme_minimal()
+  
 ```
 
